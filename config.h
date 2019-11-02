@@ -19,6 +19,7 @@
 // How many times we should attempt to connect to AWS
 #define AWS_MAX_RECONNECT_TRIES 10
 
+// Include secrets from separate files
 #include "config_aws_certs.h"
 #include "config_wifi_password.h"
 

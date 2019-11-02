@@ -1,5 +1,5 @@
 // The MQTTT endpoint for the device (unique for each AWS account but shared amongst devices within the account)
-#define AWS_IOT_ENDPOINT "a3qe33rbcmwl0w-ats.iot.us-east-1.amazonaws.com"
+#define AWS_IOT_ENDPOINT "a1b2c3d4e5f6g7-ats.iot.us-east-1.amazonaws.com"
 
 // Paste your AWS IoT certificate that's assinged to your thing here
 const char AWS_CERT_CRT[] = R"(-----BEGIN CERTIFICATE-----
