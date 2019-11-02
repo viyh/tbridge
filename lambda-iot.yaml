@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: tbridge Lambda IoT Stack Template
+
+Parameters:
+  TemplateVersion:
+    Description: Template version
+    Type: String
+    Default: 1.0.0.20101101182029
+
+  CloudwatchNamespace:
+    Description: CloudWatch namespace for tilt metrics
+    Type: String
+    Default: test/brewing
+
+  CloudwatchRegion:
+    Description: CloudWatch region
+    Type: String
+    Default: us-west-1
+
+
+Resources:
+  IoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "iot:Connect",
+              "Resource": "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "iot:Publish",
+              "Resource": "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "iot:Subscribe",
+              "Resource": "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "iot:Receive",
+              "Resource": "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:*"
+            }
+          ]
+        }
+
+  IoTLambdaTopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      TopicRulePayload:
+        RuleDisabled: false
+        Sql: SELECT topic(2) AS thing_name, state, timestamp() AS timestamp FROM 'brewing/#'
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt LambdaFunction.Arn
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource:
+                  - arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - iot:Publish
+                Resource:
+                  - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/output/*
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - cloudwatch:Describe*
+                  - cloudwatch:List*
+                  - cloudwatch:Get*
+                Resource: '*'
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: tbridge-iot-to-cloudwatch
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+      Handler: index.lambda_handler
+      Runtime: python3.7
+      MemorySize: 512
+      Code:
+        ZipFile: !Sub |
+            import json
+            import boto3
+
+            cloudwatch = boto3.client('cloudwatch', region_name='${CloudwatchRegion}')
+
+            ATTRIBUTES = ["temp_f", "sg"]
+            DEVICE_ID_ATTRIBUTE = "_id_"
+            CLOUDWATCH_NAMESPACE = "${CloudwatchNamespace}"
+
+            def cw(deviceId, metricValue, metricName):
+                metric_data = {
+                    'MetricName': metricName,
+                    'Dimensions': [{'Name': 'Location', 'Value': deviceId}],
+                    'Unit': 'Count',
+                    'Value': float(metricValue)
+                }
+                cloudwatch.put_metric_data(MetricData=[metric_data],Namespace=CLOUDWATCH_NAMESPACE)
+                return
+
+            def lambda_handler(event, context):
+                print("Received event: {}".format(str(event)))
+                cw('Tilt ' + event['state']['name'], event['state']['sg'], 'specific_gravity')
+                cw('Tilt ' + event['state']['name'], event['state']['temp_f'] * 1000.0, 'temperature_f')
+                return event
+
+  LambdaInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      SourceArn: !Join [ "", [ "arn:aws:iot:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":rule/", !Ref "IoTLambdaTopicRule" ] ]
+      Action: lambda:InvokeFunction
+      Principal: iot.amazonaws.com
+      FunctionName: !GetAtt LambdaFunction.Arn
+      SourceAccount: !Ref AWS::AccountId
+
+
+Outputs:
+  Lambda:
+    Description: ARN for Lambda function
+    Value: !GetAtt LambdaFunction.Arn
