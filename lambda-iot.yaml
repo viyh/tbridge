@@ -126,7 +126,7 @@ Resources:
             def lambda_handler(event, context):
                 print("Received event: {}".format(str(event)))
                 cw('Tilt ' + event['state']['name'], event['state']['sg'], 'specific_gravity')
-                cw('Tilt ' + event['state']['name'], event['state']['temp_f'] * 1000.0, 'temperature_f')
+                cw('Tilt ' + event['state']['name'], event['state']['temp_f'], 'temperature_f')
                 return event
 
   LambdaInvocationPermission:

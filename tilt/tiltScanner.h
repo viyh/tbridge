@@ -1,21 +1,22 @@
 //
-// Created by John Beeler on 5/12/18.
+// Modified by Joe Richards on 2019-11-02
+//
+// Originally created by John Beeler on 5/12/18.
 //
 
 #ifndef TILTBRIDGE_TILTSCANNER_H
 #define TILTBRIDGE_TILTSCANNER_H
 
 #include "tiltHydrometer.h"
-#include <nlohmann/json.hpp>
+#include "log.h"
+#include <stdint.h>
+#include <json11/json11.hpp>
 
+using json = json11::Json;
 
 #ifndef BLE_SCAN_TIME
 #define BLE_SCAN_TIME       5  // Seconds to scan
 #endif
-
-// for convenience
-using json = nlohmann::json;
-
 
 class tiltScanner {
 public:
@@ -26,9 +27,7 @@ public:
     bool wait_until_scan_complete();
     void set_scan_active_flag(bool value);
     uint8_t load_tilt_from_advert_hex(std::string advert_string_hex);
-    nlohmann::json tilt_to_json();
-
-
+    json::object tilt_to_json();
     tiltHydrometer* tilt(uint8_t color);
 
 private:

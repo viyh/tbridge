@@ -1,5 +1,15 @@
 #include "wifi_connect.h"
 
+// void start_mdns_service() {
+//     //initialize mDNS service
+//     if (MDNS.begin(DEVICE_NAME)) {
+//         console_log("wifi - mDNS success, hostname set to: " + (String)DEVICE_NAME);
+//     } else {
+//         console_log("wifi - mDNS hostname not set!");
+//         return;
+//     }
+// }
+
 // connect to wifi
 void ConnectToWiFi(SSD1306Wire& display) {
     WiFi.begin(wifi_ssid, wifi_password);
@@ -19,5 +29,6 @@ void ConnectToWiFi(SSD1306Wire& display) {
         }
     }
     console_log("wifi - IP address: " + WiFi.localIP().toString());
-    console_log("wifi - IP address: " + WiFi.macAddress());
+    console_log("wifi - MAC address: " + WiFi.macAddress());
+    // start_mdns_service();
 }

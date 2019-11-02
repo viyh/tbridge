@@ -1,14 +1,19 @@
 //
-// Created by John Beeler on 4/28/18.
+// Modified by Joe Richards on 2019-11-02
+//
+// Originally created by John Beeler on 4/28/18.
 //
 
 #ifndef TILTBRIDGE_TILTHYDROMETER_H
 #define TILTBRIDGE_TILTHYDROMETER_H
 
-#include <nlohmann/json.hpp>
+#include <stdint.h>
+#include <sstream>
+#include <string>
+#include <json11/json11.hpp>
 
+using json = json11::Json;
 
-// There's definitely a better way of doing this
 #define TILT_COLOR_RED      0
 #define TILT_COLOR_GREEN    1
 #define TILT_COLOR_BLACK    2
@@ -36,26 +41,22 @@
 class tiltHydrometer {
 public:
     explicit tiltHydrometer(uint8_t color);
-
     bool set_values(uint32_t i_temp, uint32_t i_grav);
     std::string color_name();
     std::string converted_gravity();
-    nlohmann::json to_json();
-    bool is_loaded();
-
-    static uint8_t uuid_to_color_no(std::string data);
     uint8_t get_color_number();
-
+    bool is_loaded();
+    json::object to_json();
+    std::string to_string();
+    static uint8_t uuid_to_color_no(std::string data);
     uint32_t temp;
     uint32_t gravity;
 
-
 private:
-    uint8_t m_color;  // TODO - add a getter for this
-    bool m_loaded;    // Has data been loaded from an ad string
-
-
+    uint8_t m_color;
+    bool m_loaded;
 };
 
+extern tiltHydrometer tilt_hydrometer;
 
 #endif //TILTBRIDGE_TILTHYDROMETER_H

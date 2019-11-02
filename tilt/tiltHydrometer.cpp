@@ -1,9 +1,10 @@
 //
-// Created by John Beeler on 4/28/18.
+// Modified by Joe Richards on 2019-11-02
+//
+// Originally created by John Beeler on 4/28/18.
 //
 
 #include "tiltHydrometer.h"
-
 
 tiltHydrometer::tiltHydrometer(uint8_t color) {
     m_loaded            = false;
@@ -85,15 +86,21 @@ std::string tiltHydrometer::converted_gravity() {
     return output;
 }
 
-nlohmann::json tiltHydrometer::to_json() {
-    nlohmann::json j;
-    j = {
-            {"color", color_name()},
-            {"temp", temp},
-            {"gravity", converted_gravity()},
+json::object tiltHydrometer::to_json() {
+    json::object j = json::object {
+        {"name", color_name()},
+        {"temp_f", (int)temp},
+        {"sg", (int)gravity}
     };
     return j;
 }
+
+std::string tiltHydrometer::to_string() {
+    std::ostringstream s;
+    s << "Color: " << color_name() << ", Temperature F: " << temp << ", SG: " << converted_gravity();
+    return s.str();
+}
+
 
 uint8_t tiltHydrometer::get_color_number() {
     return m_color;

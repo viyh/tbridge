@@ -4,8 +4,11 @@
 #include <config.h>
 #include <WiFiClientSecure.h>
 #include <MQTTClient.h>
-#include <nlohmann/json.hpp>
+#include <json11/json11.hpp>
+#include "tilt/tiltHydrometer.h"
 #include "log.h"
+
+using json = json11::Json;
 
 class AWSIoT {
 public:
@@ -13,12 +16,9 @@ public:
     WiFiClientSecure net;
     MQTTClient client;
     void ConnectToAWS();
-    void sendJsonToAWS(const nlohmann::json tilt_raw_data);
+    void sendToAWS(tiltHydrometer* tilt);
 };
 
 extern AWSIoT aws_iot;
-
-//extern void ConnectToAWS();
-//extern void sendJsonToAWS(const nlohmann::json tilt_raw_data);
 
 #endif

@@ -1,10 +1,4 @@
-#include "log.H"
-
-// strftime format
-#define LOGGER_PRETTY_TIME_FORMAT "%Y-%m-%d %H:%M:%S"
-
-// printf format
-#define LOGGER_PRETTY_MS_FORMAT ".%03d"
+#include "log.h"
 
 void set_clock() {
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");

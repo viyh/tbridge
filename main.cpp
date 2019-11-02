@@ -12,13 +12,12 @@ uint16_t loopCount = 0;
 SSD1306Wire display(OLED_ADDRESS, OLED_SDA, OLED_SCL);
 
 // convert json to simple String object
-String to_string(const json &j)
-{
-    if (j.type() == json::value_t::string) {
-        return String(j.get<std::string>().c_str());
-    }
-    return j.dump().c_str();
-}
+// String to_string(const json &j) {
+//     if (j.type() == json::value_t::string) {
+//         return String(j.get<std::string>().c_str());
+//     }
+//     return j.dump().c_str();
+// }
 
 void display_string(int x, int y, String msg) {
     display.drawString(x, y, msg);
@@ -90,20 +89,18 @@ void setup() {
     display.setFont(ArialMT_Plain_16);
 }
 
-void main_display(String color, String gravity, String temp) {
+void main_display(tiltHydrometer *tilt) {
     display.clear();
-    display_string(0, 0, "Tilt: " + color);
-    display_string(0, 20, "SG: " + gravity);
-    display_string(0, 40, "Temp: " + temp);
+    display_string(0, 0, "Tilt: " + (String)tilt->color_name().c_str());
+    display_string(0, 20, "SG: " + (String)tilt->converted_gravity().c_str());
+    display_string(0, 40, "Temp: " + (String)tilt->temp);
     display_string(118, 16, ".");
-    delay(10000);
 }
 
 void loop() {
     int tilt_count = 0;
-    nlohmann::json tilt_raw_data;
 
-    console_log((String)"loop - start [" + loopCount + "]");
+    console_log((String)"loop - start [" + loopCount + "] - free heap: " + (String)(ESP.getFreeHeap() / 1024) + " kB");
     display_string(120, 16, ".");
 
     tilt_scanner.scan();
@@ -111,22 +108,16 @@ void loop() {
 
     for(uint8_t i = 0;i<TILT_COLORS;i++) {
         if(tilt_scanner.tilt(i)->is_loaded()) {
-            tilt_raw_data[tilt_count] = tilt_scanner.tilt(i)->to_json();
-            console_log((String)"loop - tilt_raw_data: " + tilt_raw_data.dump().c_str());
+            tiltHydrometer *tilt = tilt_scanner.tilt(i);
+            console_log("loop - tilt found: " + (String)tilt->color_name().c_str());
+            main_display(tilt);
             display_string(122, 16, ".");
-            aws_iot.sendJsonToAWS(tilt_raw_data[tilt_count]);
-            delay(1000);
+            aws_iot.sendToAWS(tilt);
+            delay(10000);
             tilt_count++;
         }
     }
 
-    for(uint8_t i = 0; i<tilt_raw_data.size(); i++) {
-        main_display(
-            to_string(tilt_raw_data[i]["color"]),
-            to_string(tilt_raw_data[i]["gravity"]),
-            to_string(tilt_raw_data[i]["temp"])
-        );
-    }
     aws_iot.client.loop();
     loopCount++;
 }
